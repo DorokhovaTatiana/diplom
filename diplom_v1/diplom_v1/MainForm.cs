@@ -50,6 +50,8 @@ namespace diplom_v1
                 var weight = int.Parse(graphWeight.Text);
                 var sequence = new Sequence(weight);
                 sequence.bfs();
+                var sequences = sequence.generatingMaximumGraphs();
+                sequence.drawingAllSequence(sequences);
                
             }
         }

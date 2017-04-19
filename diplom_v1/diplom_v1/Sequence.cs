@@ -27,38 +27,43 @@ namespace diplom_v1
 	{
 		public int length { get; set; }
 		public string name { get; set; }
-//		public int[,] matrix { get; set; }
+		public int[,] matrix { get; set; }
 		public List<int> sequence { get; set; }
 		public Dictionary<Tuple<int, int>, Sequence> parents { get; set; }
 		public List<Sequence> graphs { get; set; }
 		public bool isChildren { get; set; }
+		public List<Tuple<int, int>> indexes { get; set; }
+		public List<string> drawing  { get; set; }
 		
 		public List<Sequence> maximumGraphicsSequence = new List<Sequence>();
 		public List<Sequence> sequences = new List<Sequence>();
 		public List<string> used = new List<string>();
-		public  IEnumerable<string> per;
+		
 		int index = 0;
 		
 		public Sequence(int weight)
 		{
-//			this.matrix = null;
-			this.length = weight - 1;
+			this.matrix = null;
+			this.length = weight;
 			this.isChildren = false;
 			this.sequence = generatingList(weight);
 			this.name = String.Join(",", this.sequence);
-			this.parents = new Dictionary<Tuple<int, int>, Sequence>();
+			this.indexes = new List<Tuple<int, int>>();
 			this.graphs = new List<Sequence>();
+			this.drawing = new List<string>();
+			
 		}
 		public Sequence(List<int> sequence)
 		{
-//			this.matrix = null;
-			this.per = null;
+			this.matrix = null;
+//			this.per = null;
 			this.isChildren = false;
 			this.sequence = sequence;
 			this.name = String.Join(",", sequence);
-			this.length = sequence.FindLastIndex(x=>x!=0);
-			this.parents = new Dictionary<Tuple<int, int>, Sequence>();
+			this.length = sequence.FindIndex(x=>x==0);
+			this.indexes = new List<Tuple<int, int>>();
 			this.graphs = new List<Sequence>();
+			this.drawing = new List<string>();
 		}
 		public List<int> generatingList(int weight)
 		{
@@ -119,8 +124,8 @@ namespace diplom_v1
 		
 		public bool isGraphicSequence(List<int> sequence, int lengthSequence)
 		{
-			int w = lengthSequence + 1, b = 0, s = 0, c = 0;
-			for (var i = 0; i <= lengthSequence; i++)
+			int w = lengthSequence, b = 0, s = 0, c = 0;
+			for (var i = 0; i < lengthSequence; i++)
 			{
 				b += sequence[i];
 				c = c + w - 1;
@@ -179,11 +184,11 @@ namespace diplom_v1
 		public Queue<Sequence> getQueue(int indexReduction, int indexIncrease, Sequence node, Queue<Sequence> queue)
 		{
 			List<int> sequence = node.sequence;
-			if (indexIncrease != indexReduction && indexReduction > 0 && indexReduction < node.length
+			if (indexIncrease != indexReduction && indexReduction > 0 && indexReduction < node.length-1
 			    && sequence[indexReduction] - 1 >= sequence[indexReduction+1]
-			    || indexReduction == node.length 
+			    || indexReduction == node.length - 1
 			        && sequence[indexIncrease] - sequence[indexReduction] == 0 
-			    || indexReduction == node.length && indexReduction - indexIncrease == 1)
+			    || indexReduction == node.length - 1 && indexReduction - indexIncrease == 1)
 			{
 				if(indexIncrease > 0 && sequence[indexIncrease-1] >= sequence[indexIncrease] + 1 || indexIncrease == 0 )
 				{
@@ -204,21 +209,22 @@ namespace diplom_v1
 						{
 							newSequence = sequences.Where(s=>s.name == newSequence.name).First();
 						}
-						for (var i = 0; i < newSequence.length; i++)
-						{
-							var copyNewSequence = Clone(newSequence.sequence);
-							copyNewSequence = getNewSequence (copyNewSequence, indexIncrease,indexReduction);
-							var seq = new Sequence(copyNewSequence);
-							bool flag =false;
-							foreach(var e in newSequence.graphs)
-							{
-								if(e.name == seq.name)
-									flag =true;
-							}
-							if(!flag) newSequence.graphs.Add(seq);
-							 
-						}
-						drawingSequence(newSequence.graphs);
+						newSequence.indexes.Add(new Tuple<int, int>(indexIncrease, indexReduction));
+//						for (var i = 0; i < newSequence.length; i++)
+//						{
+//							var copyNewSequence = Clone(newSequence.sequence);
+//							copyNewSequence = getNewSequence (copyNewSequence, indexIncrease,indexReduction);
+//							var seq = new Sequence(copyNewSequence);
+//							bool flag =false;
+//							foreach(var e in newSequence.graphs)
+//							{
+//								if(e.name == seq.name)
+//									flag =true;
+//							}
+//							if(!flag) newSequence.graphs.Add(seq);
+//							 
+//						}
+//						drawingSequence(newSequence.graphs);
 					}
 				}
 			}
@@ -244,7 +250,7 @@ namespace diplom_v1
 						queue = getQueue(index, i, currentSequence, queue);
 					 	index = currentSequence.sequence.FindLastIndex(x=>x!=currentSequence.sequence[i]);
 					 	queue = getQueue(index, i, currentSequence, queue);
-					 	if(i == currentSequence.length - 1 && !currentSequence.isChildren)
+					 	if(i == currentSequence.length - 2 && !currentSequence.isChildren)
 					 	{					 	
 					 		maximumGraphicsSequence.Add(currentSequence);
 					 	} 
@@ -252,70 +258,85 @@ namespace diplom_v1
 			}
 		}
 		
-//		public Queue<Sequence> generatingMaximumGraphs()
-//		{
-//			var sequences = new Queue<Sequence>();
-//			foreach (var maxSequence in maximumGraphicsSequence)
-//            {
-//				
-//				maxSequence.graphs.Item2.Add(maxSequence.sequence);
-//                sequences.Enqueue(maxSequence);
-//            }
-//			return sequences;
-//		}
-		public void drawingSequence(List<Sequence> sequences)
-        {
-            
-			foreach (var e in sequences)
-			{
-				var matrix = getAdjacencyMatrix(e.sequence, e.length);
-				var g = new AdjacencyGraph<int, Edge<int>>();
-				var length = matrix.GetLength(0);
-                for(var i = 1; i <= length; i++)
-                {
-                    g.AddVertex(i);
-                    for(var j = 0; j < length; j++)
-                    {
-                        if (matrix[i-1, j] == 1)
-                        {
-                            matrix[j, i-1] = 0;
-                            var edge = new Edge<int>(i, j+1);
-                            g.AddEdge(edge);
-                        }
-                    }
-                }
-					var graphViz = new GraphvizAlgorithm<int, Edge<int>>(g, @".\", GraphvizImageType.Png);
-	                graphViz.FormatVertex += FormatVertex;
-	                graphViz.FormatEdge += FormatEdge;
-	                graphViz.Generate(new FileDotEngine(), e.name);
-				
-			}
-		}
-		public List<int> getNewSequence(List<int> sequence, int sourse, int target)
+		public Queue<Sequence> generatingMaximumGraphs()
 		{
-			int increase = -1, reduction =-1;
-			var duplicateIndex = 0;
-
-			for (var i = index; i < sequence.Count; i++)
+			var sequences = new Queue<Sequence>();
+			foreach (var maxSequence in maximumGraphicsSequence)
+            {
+                sequences.Enqueue(maxSequence);
+            }
+			return sequences;
+		}
+		public void drawingSequence(Sequence sequence)
+		{
+			sequence.matrix = getAdjacencyMatrix(sequence.sequence, sequence.length);
+			var matrix = sequence.matrix;
+			var g = new AdjacencyGraph<int, Edge<int>>();
+			var length = sequence.length;
+            for(var i = 1; i <= length; i++)
+            {
+                g.AddVertex(i);
+                for(var j = 0; j < length; j++)
+                {
+                    if (matrix[i-1, j] == 1)
+                   	{
+                        matrix[j, i-1] = 0;
+                        var edge = new Edge<int>(i, j+1);
+                       	g.AddEdge(edge);
+                    }
+                 }
+            }
+			var graphViz = new GraphvizAlgorithm<int, Edge<int>>(g, @".\", GraphvizImageType.Png);
+	        graphViz.FormatVertex += FormatVertex;
+	        graphViz.FormatEdge += FormatEdge;
+	        graphViz.Generate(new FileDotEngine(), sequence.name);
+	        
+//	        return g;
+		}
+		public void drawingAllSequence(Queue<Sequence> sequences)
+        {
+			while(sequences.Count > 0)
+			{
+				var sequence = sequences.Dequeue();
+				drawingSequence(sequence);
+				foreach(var e in sequence.indexes)
+				{
+					int increase = e.Item1, reduction = e.Item2;
+					
+					var listSequence = getNewSequence(sequence, increase,reduction);
+					listSequence.ForEach(s=> sequences.Enqueue(s));
+				}
+			}
+            
+			
+		}
+		public List<Sequence> getNewSequence(Sequence seq, int sourse, int target)
+		{
+			var sequences = new List<Sequence>();
+			var sequence = seq.sequence;
+			var length = seq.length;
+			length = target > length ? target: length;
+			for (var i = 0; i <= length; i++)
 		    { 
-		        if (sequence[i] == sequence[sourse]  && i!= increase && reduction ==-1) 
-		        {
-		        	sequence[i] -= 1;
-		        	reduction = i;
-		        	index = i;
-		        }
-		        else if(sequence[i] == sequence[target] && i!=reduction && increase ==-1)
-		        {
-		        	sequence[i] += 1;
-		        	increase = i;
-		        }
-		        else if(increase != -1 && reduction != -1)
-		        {
-		        	break;
-		        }
-
+				for(var j = 0; j <= length; j++)
+				{
+					if (i != j &&  sequence[sourse] == sequence[i] && sequence[j] == sequence[target])
+					{
+						var copy = Clone(sequence);
+						copy[j] +=1;
+						copy[i] -=1;
+						var newSeq = new Sequence(copy);
+						if(!seq.drawing.Contains(newSeq.name))
+						{
+							sequences.Add(newSeq);
+							seq.drawing.Add(newSeq.name);
+						}
+							
+					}
+				}
+		        
 	         }
-			return sequence;
+			return sequences;
 		}
 //		public List<Sequence> getPermutations(Sequence sequence)
 //		{

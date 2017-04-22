@@ -198,7 +198,7 @@ namespace diplom_v1
 			{
 				NodeSequence currentSequence = queue.Dequeue();
 				var lengthSequence = currentSequence.sequence.FindLastIndex(x=>x!=0);
-				for (var i = 0; i < lengthSequence; i++)
+				for (var i = 0; i < lengthSequence ; i++)
 				{
 	
 						var index = currentSequence.sequence.FindIndex(x=>x<currentSequence.sequence[i]);

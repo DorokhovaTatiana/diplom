@@ -32,7 +32,7 @@ namespace diplom_v1
 		public Dictionary<Tuple<int, int>, Sequence> parents { get; set; }
 		public List<Sequence> graphs { get; set; }
 		public bool isChildren { get; set; }
-		public List<Tuple<int, int>> indexes { get; set; }
+		public Dictionary<Tuple<int, int>, Sequence> indexes { get; set; }
 		public List<string> drawing  { get; set; }
 		
 		public List<Sequence> maximumGraphicsSequence = new List<Sequence>();
@@ -48,7 +48,7 @@ namespace diplom_v1
 			this.isChildren = false;
 			this.sequence = generatingList(weight);
 			this.name = String.Join(",", this.sequence);
-			this.indexes = new List<Tuple<int, int>>();
+			this.indexes = new Dictionary<Tuple<int, int>, Sequence>();
 			this.graphs = new List<Sequence>();
 			this.drawing = new List<string>();
 			
@@ -61,7 +61,7 @@ namespace diplom_v1
 			this.sequence = sequence;
 			this.name = String.Join(",", sequence);
 			this.length = sequence.FindIndex(x=>x==0);
-			this.indexes = new List<Tuple<int, int>>();
+			this.indexes = new Dictionary<Tuple<int, int>, Sequence>();
 			this.graphs = new List<Sequence>();
 			this.drawing = new List<string>();
 		}
@@ -209,22 +209,8 @@ namespace diplom_v1
 						{
 							newSequence = sequences.Where(s=>s.name == newSequence.name).First();
 						}
-						newSequence.indexes.Add(new Tuple<int, int>(indexIncrease, indexReduction));
-//						for (var i = 0; i < newSequence.length; i++)
-//						{
-//							var copyNewSequence = Clone(newSequence.sequence);
-//							copyNewSequence = getNewSequence (copyNewSequence, indexIncrease,indexReduction);
-//							var seq = new Sequence(copyNewSequence);
-//							bool flag =false;
-//							foreach(var e in newSequence.graphs)
-//							{
-//								if(e.name == seq.name)
-//									flag =true;
-//							}
-//							if(!flag) newSequence.graphs.Add(seq);
-//							 
-//						}
-//						drawingSequence(newSequence.graphs);
+						newSequence.indexes.Add(new Tuple<int, int>(newSequence.sequence[indexIncrease], newSequence.sequence[indexReduction]),node);
+//		
 					}
 				}
 			}
@@ -241,7 +227,7 @@ namespace diplom_v1
 			while (queue.Count != 0)
 			{
 				Sequence currentSequence = queue.Dequeue();
-				for (var i = 0; i <  currentSequence.length; i++)
+				for (var i = 0; i <  currentSequence.length - 1; i++)
 				{
 	
 						var index = currentSequence.sequence.FindIndex(x=>x<currentSequence.sequence[i]);
@@ -299,18 +285,18 @@ namespace diplom_v1
 			{
 				var sequence = sequences.Dequeue();
 				drawingSequence(sequence);
-				foreach(var e in sequence.indexes)
+				foreach(var e in sequence.indexes.Keys)
 				{
 					int increase = e.Item1, reduction = e.Item2;
 					
-					var listSequence = getNewSequence(sequence, increase,reduction);
+					var listSequence = getNewSequence(sequence, increase, reduction, sequence.indexes[e]);
 					listSequence.ForEach(s=> sequences.Enqueue(s));
 				}
 			}
             
 			
 		}
-		public List<Sequence> getNewSequence(Sequence seq, int sourse, int target)
+		public List<Sequence> getNewSequence(Sequence seq, int sourse, int target, Sequence parent)
 		{
 			var sequences = new List<Sequence>();
 			var sequence = seq.sequence;
@@ -320,18 +306,21 @@ namespace diplom_v1
 		    { 
 				for(var j = 0; j <= length; j++)
 				{
-					if (i != j &&  sequence[sourse] == sequence[i] && sequence[j] == sequence[target])
+					if (i != j && sourse == sequence[i] && sequence[j] == target)
 					{
 						var copy = Clone(sequence);
 						copy[j] +=1;
 						copy[i] -=1;
 						var newSeq = new Sequence(copy);
+
 						if(!seq.drawing.Contains(newSeq.name))
 						{
+							var copyIndexes = Clone(parent.indexes);
+							newSeq.indexes = copyIndexes;
 							sequences.Add(newSeq);
 							seq.drawing.Add(newSeq.name);
 						}
-							
+						break;	
 					}
 				}
 		        
